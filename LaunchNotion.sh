@@ -7,7 +7,7 @@ PAGE_NAME="Dashboard"                                                   # Initia
 
 
 # Function to open Notion and store the WID
-openNotion () {
+openURL () {
 
 	# Store the number of previous instances of Notion
 	GREP_RESULT=$(wmctrl -l | grep $PAGE_NAME)
@@ -57,7 +57,7 @@ if test -f "$WID_FILE"; then
 		# If the output is empty, it means there is no instance
 		then
 			# Open notion 
-			openNotion
+			openURL
 
 		# If grep returns something, it means the app is already opened
 		else			
@@ -68,13 +68,13 @@ if test -f "$WID_FILE"; then
 	# Check if the file is empty
 	else
 		# Open notion  
-		openNotion
+		openURL
 	fi
 
 # Create it and open Notion
 else
 	# Open notion 
-	openNotion
+	openURL
 fi
 
 sleep 10
