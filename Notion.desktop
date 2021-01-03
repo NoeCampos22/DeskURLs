@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Notion
+Comment=To open the Notion Web Page
+Exec=/home/noecampos/.local/share/applications/Notion/LaunchNotion.sh
+Icon=/usr/share/icons/Notion
+Encoding=UTF-8
+Terminal=true
+Type=Application
+Name[it]=Notion
+Categories=URL
