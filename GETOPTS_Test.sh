@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # Flags to know if the options where or not received
-uflag=
-oflag=
 fflag=
+uflag=
+pflag=
 
-uval=
-oval=
+# Variables to store the received values
 fval=
+uval=
+pval=
 
 # This is a while loop to go through all the options and get their values, 
 # all of them are parsed by the "getopts" command.
@@ -19,23 +20,23 @@ fval=
 # The second parameter (OPTNAME) is an identifier to store the value of the current option
 # It is important to say that if a option has a value, it will be stored on 
 # a variable named OPTARG
-while getopts ":u:o:f:h" OPTNAME
+while getopts ":f:u:p:h" OPTNAME
 do
     case "$OPTNAME" in
+        "f")
+            fflag=1;
+            fval=$OPTARG;;
+
         "u")
             uflag=1;
             uval=$OPTARG;;
 
-        "o")
-            oflag=1;
-            oval=$OPTARG;;
-
-        "f")
-            fflag=1;
-            fval=$OPTARG;;
+        "p")
+            pflag=1;
+            pval=$OPTARG;;
         
         "h")
-            echo "Usage (Print all the manual)";
+            echo "Usage (Print the manual)";
             exit 1;;
 
         "?") 
@@ -55,7 +56,11 @@ do
 done
 
 
-if [[ -z "$uflag" || -z "$fflag" || -z "$oflag" ]]; then
+if [[ -z "$uflag" || -z "$pflag" || -z "$fflag" ]]; then
     echo "All the parameters are required"
     exit 1
 fi
+
+echo $fval
+echo $uval
+echo $pval
