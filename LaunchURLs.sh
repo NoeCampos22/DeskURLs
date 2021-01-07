@@ -10,7 +10,7 @@ alternativeInstPath=
 # Needed extra global variables
 
 # Execute getopt on the arguments passed to this program
-PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNp:h -l install,uninstall,path:,openAsApp,appname:,url:,webpage:,help -- "$@")"
+PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNp:h -l install,uninstall,path:,openAsApp,appname:,url:,webpage:,closeWindow,help -- "$@")"
 
 # If any bad argument was received
 [ $? -eq 0 ] || { 
@@ -26,11 +26,11 @@ unset PARSED_OPTIONS
 # Or by default it will be moved to the /usr/bin/ directory
 installScript() {
 
-	# Notify about the dependency and ask for permission
-	echo 'This program has a dependcy on the package: wmctrl'
-
 	# Check if wmctrl is already installed or not
 	if ! command -v wmctrl >/dev/null 2>&1 ; then
+
+		# Notify about the dependency and ask for permission
+		echo 'This program has a dependcy on the package: wmctrl'
 
 		# If the install dependencies option was not received...
 		if [ ! -n "$installDependencies" ]; then
@@ -56,12 +56,12 @@ installScript() {
 				echo "";;
 
 			0)
-				echo -e "\nCan not install LaunchURL without wmctrl\n";
+				echo -e "\nCan not use LaunchURL without installing wmctrl\n";
 				exit;;
 		esac
 		
 	else
-		echo -e "wmctrl is already installed\n";
+		echo -e "Dependency on wmctrl already satisfied!\n";
 	fi
 
 	# Build the current and target location
@@ -85,7 +85,6 @@ installScript() {
 
 # Function to open Notion and store the WID
 openURL () {
-	echo $1
 
 	# Store the number of previous instances of Notion
 	GREP_RESULT=$(wmctrl -l | grep $3)
@@ -93,7 +92,6 @@ openURL () {
 
 	# Calculate the position of the new WID
 	WID_NUM=$((4 * $PREV + 1))
-	echo $WID_NUM
 
 	# Open the Notion web page
     brave-browser --app=$2 &
@@ -113,9 +111,6 @@ openURL () {
 
     # Save and append the new WID
 	WID=$(echo $GREP_RESULT | awk -v var=$WID_NUM '{print $(var)}')
-	echo $WID 
-
-	echo $4
 
 	# To append or overwritte the wid file
 	if $4; then
@@ -123,11 +118,26 @@ openURL () {
 	else
     	echo $WID > $1;
 	fi
-
-	#nohup 
-	/home/noecampos/.local/share/applications/LaunchURLS/CloseWindow.sh $WID $1
+	
+	# Leave on the background the close function
+	nohup LaunchURLs --closeWindow $WID $1 $
 }
 
+
+closeWindow() {
+	# Check if the window keeps open
+	GREP_RESULT=$(wmctrl -l | grep $1) 
+
+	# After that, check each 2 seconds if the page already load
+	while ! [[ -z "$GREP_RESULT" ]];
+	do 
+		GREP_RESULT=$(wmctrl -l | grep $1) 
+		sleep 2s; 
+	done
+	
+	# Delete the WID
+	awk "!/$1/" $2 > temp && mv temp $2
+}
 
 # Execute the solicited option
 while true; do
@@ -244,6 +254,15 @@ while true; do
 		exit 1;
 		;;
 	
+	--closeWindow)
+		shift 1;
+
+		# Option to leave a background function waiting 
+		# until the window is closed to update the file
+		closeWindow $2 $3
+		exit 1;
+		;;
+
 	--)
         shift
         break;;
