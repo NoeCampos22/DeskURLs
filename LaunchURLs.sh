@@ -10,7 +10,7 @@ alternativeInstPath=
 # Needed extra global variables
 
 # Execute getopt on the arguments passed to this program
-PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNp:h -l install,uninstall,path:,asApp,asTab,appname:,url:,webpage:,closeWindow,help -- "$@")"
+PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l install,uninstall,path:,asApp,asTab,appname:,url:,webpage:,closeWindow,deskfile,help -- "$@")"
 
 # If any bad argument was received
 [ $? -eq 0 ] || { 
@@ -79,6 +79,7 @@ installScript() {
 
 	# Create the directory for the .desktop file
 	mkdir ~/.local/share/applications/LaunchURLs_DeskFiles
+	mkdir /tmp/LaunchURLs/
 
 	echo -e "\nLaunchURLs was succesfully installed!\n"
 }
@@ -159,7 +160,7 @@ while true; do
 
 		# Check if the user sent an alternative installation path
 		case $1 in
-			-p|--path)
+			--path)
 
 				# Check that the received path is to a valid directory
 				if [[ ! -d $2 ]]; then
@@ -191,6 +192,7 @@ while true; do
 		# Remove the created .desktop files
 		echo -e "\nThe .desktop files created by LaunchURLs will also be removed."
 		rm -rf ~/.local/share/applications/LaunchURLs_DeskFiles
+		rm -rf /tmp/LaunchURLs/
 
 		# Get the path to the command and delete the file
 		PATH=$(which LaunchURLs)
@@ -198,10 +200,6 @@ while true; do
 		exit 1;
 		;;
 
-    
-    -h|--help)
-        echo "Usage (Print the Manual)"
-        exit 1;;
 
     --asApp)
 		shift 1;
@@ -214,7 +212,7 @@ while true; do
 		fi
 
 		# Build the path to the temporal file
-		filePath="/tmp/"${2// /_}"_WID"
+		filePath="/tmp/LaunchURLs/"${2// /_}"_WID"
 
 		# Check if the file exists
 		if test -f "$filePath"; then
@@ -270,6 +268,66 @@ while true; do
 		exit 1;
 		;;
 
+	--deskfile)
+		shift 1;
+
+
+		template="[Desktop Entry]\nVersion=1.0\nName={APP_NAME} \nComment=To open {APP_NAME}";
+
+		# Check if the launcher will open the URL as a tab 
+		# or as a an app
+		case $1 in
+			--asApp)
+
+				# Make sure all the needed optiones were received
+				# Application Name, URL, Web Page Name
+				if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
+					echo "All the parameters are required";
+					exit 1;
+				fi
+
+
+				template="$template\nExec=bash -c \"LaunchURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\""
+				appname=${3// /_}
+				URL=$4;
+				webpage=$5
+				shift 1;;
+
+			--asTab)
+
+				# Make sure all the needed optiones were received
+				# Application Name, URL, Web Page Name
+				if [[ -z "$3" || -z "$4" ]]; then
+					echo "All the parameters are required";
+					exit 1;
+				fi
+
+				template="$template\nExec=bash -c \"LaunchURLs --asTab '{URL}'\""
+				appname=${3// /_}
+				URL=$4;
+				shift 1;;
+
+			--)
+				echo "Manual";
+				exit 1; 
+		esac
+
+		template="$template\nIcon=/usr/share/icons/{APP_NAME}\nEncoding=UTF-8\nTerminal=false"
+		template="$template\nType=Application\nName[it]={APP_NAME}\nCategories=URL"
+
+		# Replace the template placeholders to the real URL
+		template="${template//\{APP_NAME\}/$appname}"
+		template="${template//\{URL\}/$URL}"
+		template="${template//\{WEB_PAGE\}/$webpage}"
+
+		echo -e $template > ~/.local/share/applications/LaunchURLs_DeskFiles/$appname.desktop
+
+		;;
+
+    -h|--help)
+        echo "Usage (Print the Manual)"
+        exit 1;;
+	
 	--)
         shift;
         break;;
