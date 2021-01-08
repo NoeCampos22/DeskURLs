@@ -10,7 +10,7 @@ alternativeInstPath=
 # Needed extra global variables
 
 # Execute getopt on the arguments passed to this program
-PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNp:h -l install,uninstall,path:,openAsApp,appname:,url:,webpage:,closeWindow,help -- "$@")"
+PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNp:h -l install,uninstall,path:,asApp,asTab,appname:,url:,webpage:,closeWindow,help -- "$@")"
 
 # If any bad argument was received
 [ $? -eq 0 ] || { 
@@ -123,7 +123,6 @@ openURL () {
 	nohup LaunchURLs --closeWindow $WID $1 $
 }
 
-
 closeWindow() {
 	# Check if the window keeps open
 	GREP_RESULT=$(wmctrl -l | grep $1) 
@@ -204,7 +203,7 @@ while true; do
         echo "Usage (Print the Manual)"
         exit 1;;
 
-    --openAsApp)
+    --asApp)
 		shift 1;
 
 		# Make sure all the needed optiones were received
@@ -253,6 +252,14 @@ while true; do
 		fi
 		exit 1;
 		;;
+
+	--asTab)
+		shift 1;
+		
+		# Open the url as another tab
+		nohup brave-browser $2 &
+		exit 1;
+		;;
 	
 	--closeWindow)
 		shift 1;
@@ -264,7 +271,7 @@ while true; do
 		;;
 
 	--)
-        shift
+        shift;
         break;;
     
     *) 
@@ -273,151 +280,3 @@ while true; do
 
     esac
 done
-
-
-
-# #! /bin/bash
-
-# # Flags to know if the options where or not received
-# appnameFlg=
-# urlFlg=
-# webpageFLG=
-
-# # Global variables
-
-
-# # Execute getopt on the arguments passed to this program
-# PARSED_OPTIONS="$(getopt --n "Testing_GETOPT" -o a:u:p:h -l appname:,url:,url=:,pagename:,help -- "$@")"
-
-# # If any bad argument was received
-# [ $? -eq 0 ] || { 
-#     echo "Incorrect options provided"
-#     exit 1
-# }
-
-# # Needed when using getopt
-# eval set -- "$PARSED_OPTIONS"
-# unset PARSED_OPTIONS
-
-# # Goes through all the options with a case and shifting when needing
-# # If it is just the option, it needs to shift 1 but if there is also a
-# # expected value, it needs to shift 2 and so on.
-# while true; do
-#     case $1 in
-
-#     -a|--appname)
-#         appnameFlg=1;
-# 		1=$2;
-#         filePath="/tmp/$2_WID.txt";
-#         shift 2;;
-    
-#     -u|--url|--url=)
-#         urlFlg=1;
-#         2=$2;
-#         shift 2;;
-    
-#     -p|--pagename)
-#         webpageFLG=1;
-#         3=$2;
-#         shift 2;;
-    
-#     -h|--help)
-#         echo "Usage (Print the Manual)"
-#         exit 1;;
-
-#     --)
-#         shift
-#         break;;
-    
-#     # Should not occur
-#     *) 
-#         echo "Unknown error while processing options";
-#         exit 1;;
-
-#     esac
-# done
-
-# if [[ -z "$urlFlg" || -z "$webpageFLG" || -z "$appnameFlg" ]]; then
-#     echo "All the parameters are required"
-#     exit 1
-# fi
-
-
-# # Function to open Notion and store the WID
-# openURL () {
-
-# 	# Store the number of previous instances of Notion
-# 	GREP_RESULT=$(wmctrl -l | grep $3)
-# 	PREV=$(echo $GREP_RESULT | awk '{print NF/4}')
-
-# 	# Calculate the position of the new WID
-# 	WID_NUM=$((4 * $PREV + 1))
-# 	echo $WID_NUM
-
-# 	# Open the Notion web page
-#     brave-browser --app=$2 &
-
-# 	# Wait 5 seconds for the page to load
-# 	sleep 5s
-
-# 	# And check if the page already load or not
-# 	GREP_RESULT=$(wmctrl -l | grep $3) 
-
-# 	# After that, check each 2 seconds if the page already load
-# 	while [[ -z "$GREP_RESULT" ]];
-# 	do 
-# 		GREP_RESULT=$(wmctrl -l | grep $3) 
-# 		sleep 2s; 
-# 	done
-
-#     # Save and append the new WID
-# 	WID=$(echo $GREP_RESULT | awk -v var=$WID_NUM '{print $(var)}')
-# 	echo $WID 
-
-# 	# To append or overwritte the wid file
-# 	if $1; then
-# 		echo $WID >> $filePath;
-# 	else
-#     	echo $WID > $filePath;
-# 	fi
-
-# 	#nohup 
-# 	/home/noecampos/.local/share/applications/LaunchURLS/CloseWindow.sh $WID $filePath
-# }
-
-# # Check if the file exists
-# if test -f "$filePath"; then
-
-# 	# If it is not empty...
-# 	if [ -s "$filePath" ]; then
-
-# 		# Get the WID stored on the file
-# 		WID=$(cat "$filePath")
-
-# 		# Check if WID is currently used with Notion opened as an app
-# 		GREP_RESULT=$(wmctrl -l | grep $WID)
-# 		if [ -z "$GREP_RESULT" ]
-# 		# If the output is empty, it means there is no instance
-# 		then
-# 			# Open notion 
-# 			openURL false
-
-# 		# If grep returns something, it means the app is already opened
-# 		else			
-# 			# Bring the window to the front
-# 			wmctrl -iR $WID
-# 		fi
-	
-# 	# Check if the file is empty
-# 	else
-# 		# Open notion  
-# 		openURL true
-# 	fi
-
-# # Create it and open Notion
-# else
-# 	# Open notion 
-# 	openURL true
-# fi
-
-# sleep 10
