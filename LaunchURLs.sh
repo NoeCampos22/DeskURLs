@@ -1,16 +1,10 @@
 #! /bin/bash
 
-# Flags to know if the options where or not received
-installFlg=
-installDependencies=
-
-# Global variables that store option values
-alternativeInstPath=
-
-# Needed extra global variables
+DeskfilesPath=~/.local/share/applications/URLs_DeskFiles
+TemporalPath=/tmp/LaunchURLs/
 
 # Execute getopt on the arguments passed to this program
-PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l install,uninstall,path:,asApp,asTab,appname:,url:,webpage:,closeWindow,deskfile,help -- "$@")"
+PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l asApp,asTab,appname:,url:,webpage:,closeWindow,deskfile,uninstall,help -- "$@")"
 
 # If any bad argument was received
 [ $? -eq 0 ] || { 
@@ -22,67 +16,6 @@ PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l install,uninstall,path:,as
 eval set -- "$PARSED_OPTIONS"
 unset PARSED_OPTIONS
 
-# Function that install the script on the specified path
-# Or by default it will be moved to the /usr/bin/ directory
-installScript() {
-
-	# Check if wmctrl is already installed or not
-	if ! command -v wmctrl >/dev/null 2>&1 ; then
-
-		# Notify about the dependency and ask for permission
-		echo 'This program has a dependcy on the package: wmctrl'
-
-		# If the install dependencies option was not received...
-		if [ ! -n "$installDependencies" ]; then
-
-			# Ask the user
-			while true; do
-			read -p "Do you want to install: wmctrl? (Y/n) " installDependencies
-				case $installDependencies in
-					[YyNn]* )
-						break;;
-
-					* ) 
-						echo -e "\nPlease answer yes (y/Y) or no (n/N).\n";
-				esac
-			done
-		fi
-
-		# Install or not the dependency
-		case $installDependencies in
-			1) 
-				echo "";
-				sudo apt-get install wmctrl -y; 
-				echo "";;
-
-			0)
-				echo -e "\nCan not use LaunchURL without installing wmctrl\n";
-				exit;;
-		esac
-		
-	else
-		echo -e "Dependency on wmctrl already satisfied!\n";
-	fi
-
-	# Build the current and target location
-	CURR_LOC="$(pwd)/LaunchURLs.sh";
-
-	# Build the installation path
-	if [ -n "$alternativeInstPath" ]; then
-		TARG_LOC="$alternativeInstPath/LaunchURLs";
-	else
-		TARG_LOC="/usr/bin/LaunchURLs";
-	fi
-
-	# Move the file to the target location
-	sudo cp $CURR_LOC $TARG_LOC
-
-	# Create the directory for the .desktop file
-	mkdir ~/.local/share/applications/LaunchURLs_DeskFiles
-	mkdir /tmp/LaunchURLs/
-
-	echo -e "\nLaunchURLs was succesfully installed!\n"
-}
 
 # Function to open Notion and store the WID
 openURL () {
@@ -143,198 +76,158 @@ closeWindow() {
 while true; do
     case $1 in
 
-    --install)
-		shift 1;
+		--asApp)
+			shift 1;
 
-		# Check if the user already answer the
-		# dependency permissions question via an option
-		case $1 in
-			-y|-Y)
-				installDependencies=1;
-				shift 1;;
-
-			-n|-N)
-				installDependencies=0;
-				shift 1;;
-		esac
-
-		# Check if the user sent an alternative installation path
-		case $1 in
-			--path)
-
-				# Check that the received path is to a valid directory
-				if [[ ! -d $2 ]]; then
-					echo -e "\nThe path must be to a valid directory.\n"
-					exit 1;
-				fi
-
-				alternativeInstPath=$2;
-				shift 2;;
-		esac
-		
-		if [ "$#" -gt 1 ]; then
-			echo -e "\nAny option different than -y/Y, -n/N or --path after --install will be ignored."
-		fi
-
-		# Call the function that makes the validations
-		# and installation
-		installScript
-		exit 1;
-		;;
-
-	--uninstall)
-		shift 1;
-
-		if [ "$#" -gt 1 ]; then
-			echo -e "\nAny option after --uninstall will be ignored."
-		fi
-
-		# Remove the created .desktop files
-		echo -e "\nThe .desktop files created by LaunchURLs will also be removed."
-		rm -rf ~/.local/share/applications/LaunchURLs_DeskFiles
-		rm -rf /tmp/LaunchURLs/
-
-		# Get the path to the command and delete the file
-		PATH=$(which LaunchURLs)
-		echo -e "LaunchURLs was uninstalled succesfully!\n"
-		exit 1;
-		;;
-
-
-    --asApp)
-		shift 1;
-
-		# Make sure all the needed optiones were received
-		# Application Name, URL, Web Page Name
-		if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
-		    echo "All the parameters are required";
-		    exit 1;
-		fi
-
-		# Build the path to the temporal file
-		filePath="/tmp/LaunchURLs/"${2// /_}"_WID"
-
-		# Check if the file exists
-		if test -f "$filePath"; then
-
-			# If it is not empty...
-			if [ -s "$filePath" ]; then
-
-				# Get the WID stored on the file
-				WID=$(cat "$filePath")
-
-				# Check if WID is currently used with Notion opened as an app
-				GREP_RESULT=$(wmctrl -l | grep $WID)
-				if [ -z "$GREP_RESULT" ]
-				# If the output is empty, it means there is no instance
-				then
-					# Open notion 
-					openURL $filePath $3 $4 false
-
-				# If grep returns something, it means the app is already opened
-				else			
-					# Bring the window to the front
-					wmctrl -iR $WID
-				fi
-			
-			# Check if the file is empty
-			else
-				# Open notion  
-				openURL $filePath $3 $4 true
+			# Make sure all the needed optiones were received
+			# Application Name, URL, Web Page Name
+			if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
+				echo "All the parameters are required";
+				exit 1;
 			fi
 
-		# Create it and open Notion
-		else
-			# Open notion 
-			openURL $filePath $3 $4 true
-		fi
-		exit 1;
-		;;
+			# Build the path to the temporal file
+			filePath="$TemporalPath"${2// /_}"_WID"
 
-	--asTab)
-		shift 1;
+			# Check if the file exists
+			if test -f "$filePath"; then
+
+				# If it is not empty...
+				if [ -s "$filePath" ]; then
+
+					# Get the WID stored on the file
+					WID=$(cat "$filePath")
+
+					# Check if WID is currently used with Notion opened as an app
+					GREP_RESULT=$(wmctrl -l | grep $WID)
+					if [ -z "$GREP_RESULT" ]
+					# If the output is empty, it means there is no instance
+					then
+						# Open notion 
+						openURL $filePath $3 $4 false
+
+					# If grep returns something, it means the app is already opened
+					else			
+						# Bring the window to the front
+						wmctrl -iR $WID
+					fi
+				
+				# Check if the file is empty
+				else
+					# Open notion  
+					openURL $filePath $3 $4 true
+				fi
+
+			# Create it and open Notion
+			else
+				# Open notion 
+				openURL $filePath $3 $4 true
+			fi
+			exit 1;
+			;;
+
+		--asTab)
+			shift 1;
+			
+			# Open the url as another tab
+			nohup brave-browser $2 &
+			exit 1;
+			;;
 		
-		# Open the url as another tab
-		nohup brave-browser $2 &
-		exit 1;
-		;;
-	
-	--closeWindow)
-		shift 1;
+		--closeWindow)
+			shift 1;
 
-		# Option to leave a background function waiting 
-		# until the window is closed to update the file
-		closeWindow $2 $3
-		exit 1;
-		;;
+			# Option to leave a background function waiting 
+			# until the window is closed to update the file
+			closeWindow $2 $3
+			exit 1;
+			;;
 
-	--deskfile)
-		shift 1;
+		--deskfile)
+			shift 1;
 
 
-		template="[Desktop Entry]\nVersion=1.0\nName={APP_NAME} \nComment=To open {APP_NAME}";
+			template="[Desktop Entry]\nVersion=1.0\nName={APP_NAME} \nComment=To open {APP_NAME}";
 
-		# Check if the launcher will open the URL as a tab 
-		# or as a an app
-		case $1 in
-			--asApp)
+			# Check if the launcher will open the URL as a tab 
+			# or as a an app
+			case $1 in
+				--asApp)
 
-				# Make sure all the needed optiones were received
-				# Application Name, URL, Web Page Name
-				if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
-					echo "All the parameters are required";
-					exit 1;
-				fi
+					# Make sure all the needed optiones were received
+					# Application Name, URL, Web Page Name
+					if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
+						echo "All the parameters are required";
+						exit 1;
+					fi
 
 
-				template="$template\nExec=bash -c \"LaunchURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\""
-				appname=${3// /_}
-				URL=$4;
-				webpage=$5
-				shift 1;;
+					template="$template\nExec=bash -c \"LaunchURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\""
+					appname=${3// /_}
+					URL=$4;
+					webpage=$5
+					shift 1;;
 
-			--asTab)
+				--asTab)
 
-				# Make sure all the needed optiones were received
-				# Application Name, URL, Web Page Name
-				if [[ -z "$3" || -z "$4" ]]; then
-					echo "All the parameters are required";
-					exit 1;
-				fi
+					# Make sure all the needed optiones were received
+					# Application Name, URL, Web Page Name
+					if [[ -z "$3" || -z "$4" ]]; then
+						echo "All the parameters are required";
+						exit 1;
+					fi
 
-				template="$template\nExec=bash -c \"LaunchURLs --asTab '{URL}'\""
-				appname=${3// /_}
-				URL=$4;
-				shift 1;;
+					template="$template\nExec=bash -c \"LaunchURLs --asTab '{URL}'\""
+					appname=${3// /_}
+					URL=$4;
+					shift 1;;
 
-			--)
-				echo "Manual";
-				exit 1; 
-		esac
+				--)
+					echo "Manual";
+					exit 1; 
+			esac
 
-		template="$template\nIcon=/usr/share/icons/{APP_NAME}\nEncoding=UTF-8\nTerminal=false"
-		template="$template\nType=Application\nName[it]={APP_NAME}\nCategories=URL"
+			template="$template\nIcon=/usr/share/icons/{APP_NAME}\nEncoding=UTF-8\nTerminal=false"
+			template="$template\nType=Application\nName[it]={APP_NAME}\nCategories=URL"
 
-		# Replace the template placeholders to the real URL
-		template="${template//\{APP_NAME\}/$appname}"
-		template="${template//\{URL\}/$URL}"
-		template="${template//\{WEB_PAGE\}/$webpage}"
+			# Replace the template placeholders to the real URL
+			template="${template//\{APP_NAME\}/$appname}"
+			template="${template//\{URL\}/$URL}"
+			template="${template//\{WEB_PAGE\}/$webpage}"
 
-		echo -e $template > ~/.local/share/applications/LaunchURLs_DeskFiles/$appname.desktop
+			echo -e $template > $DeskfilesPath/$appname.desktop
+			;;
 
-		;;
+		--uninstall)
+			shift 1;
 
-    -h|--help)
-        echo "Usage (Print the Manual)"
-        exit 1;;
-	
-	--)
-        shift;
-        break;;
-    
-    *) 
-        echo "Unknown error while processing options";
-        exit 1;;
+			if [ "$#" -gt 1 ]; then
+				echo -e "\nAny option after --uninstall will be ignored."
+			fi
+
+			# Remove the created .desktop files
+			echo -e "\nThe .desktop files created by LaunchURLs will also be removed."
+			[[ -d $DeskfilesPath ]] && rm -rf $DeskfilesPath;
+			[[ -d $TemporalPath ]] && rm -rf $TemporalPath;
+
+			# Get the path to the command and delete the file
+			whichLaunch=$(which LaunchURLs);
+			sudo rm -rf $whichLaunch;
+			echo -e "LaunchURLs was uninstalled succesfully!\n"
+			exit 1;
+			;;
+
+		-h|--help)
+			echo "Usage (Print the Manual)"
+			exit 1;;
+		
+		--)
+			shift;
+			break;;
+		
+		*) 
+			echo "Unknown error while processing options";
+			exit 1;;
 
     esac
 done
