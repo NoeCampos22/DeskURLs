@@ -1,123 +1,177 @@
-#! /bin/bash
+#!/bin/bash
+#
+# Install the LaunchURL script and make the needed directories
 
+# TODO(NoeCampos22): Change the error messages to the STDERR and non errors to STDOUT
+
+# TODO(NoeCampos22): Change Global variables to Local on the main function
+# and send them as arguments to the rest of functions
 # Global Variables
-depFlg=
-altPath=
-
-# Execute getopt on the arguments passed to this program
-PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l path:,help -- "$@")"
-
-# If any bad argument was received
-[ $? -eq 0 ] || { 
-    echo -e "\nInvalid options provided\n"
-    exit 1
-}
-
-# Needed when using getopt
-eval set -- "$PARSED_OPTIONS"
-unset PARSED_OPTIONS
+DEPENDENCIES_FLAG=
+ALTERNATIVE_PATH=
 
 
-installDependencies() {
+#######################################
+# Check if the needed dependecy is already installed
+# or installs it after the user confirmation.
+#
+# Globals:
+#   DEPENDENCIES_FLAG
+#
+# Inputs:
+#   [YyNn] to give or not permission to install dependencies
+#
+# Outputs:
+#   STDOUT:
+#       - Notify of the dependency
+#       - Little menu that asks for permission to install packages
+#######################################
+function install_dependencies() {
 	
-    # Notify about the dependency and ask for permission
     echo -e '\nThis program has a dependcy on the package: wmctrl'
 
-    # If the install dependencies option was not received...
-    if [ ! -n "$depFlg" ]; then
+    # If the -Yy option was not received...
+    if [ -z "${DEPENDENCIES_FLAG}" ]; then
 
-        # Ask the user
+        # Asks for permission to install packages
         while true; do
-        read -p "Do you want to install: wmctrl? (Y/n) " depFlg
-            case $depFlg in
-                [Yy]* )
-                    break;;
-                
-                [Nn]* )
-                    echo -e "\nCan not use LaunchURL without installing wmctrl\n";
-                    exit;;
-
-                * ) 
-                    echo -e "\nPlease answer yes (y/Y) or no (n/N).\n";;
+            read -rp "Do you want to install: wmctrl? (Y/n) " YN
+            
+            case "${YN}" in
+                [Yy]* ) break;;
+                [Nn]* ) echo -e "\nCan not use LaunchURL without installing wmctrl\n"; exit;;
+                * ) echo -e "\nPlease answer yes (y/Y) or no (n/N).\n";;
             esac
         done
     fi
 
-    echo "";
     sudo apt-get install wmctrl -y; 
     echo "";
 }
 
-# Function that install the script on the specified path
-# Or by default it will be moved to the /usr/bin/ directory
-installScript() {
+
+#######################################
+# Moves the LaunchURLs script to /usr/bin/ dir or 
+# to the given path by the user. Also, creates needed directories.
+#
+# Globals:
+#   ALTERNATIVE_PATH
+#
+# Outputs:
+#   STDOUT:
+#       Success message
+#######################################
+function install_script() {
+
+	local CURRENT_PATH;
+    local TARGET_PATH;
+    local DESKFILES_PATH;
+    local TEMPORAL_PATH;
 
 	# Build the current and target location
-	CURR_LOC="$(pwd)/LaunchURLs.sh";
-    TARG_LOC="/usr/bin/LaunchURLs";
+    CURRENT_PATH="$(pwd)/LaunchURLs.sh";
+    TARGET_PATH="/usr/bin/LaunchURLs";
 
-	# Build the installation path
-	[[ -n "$altPath" ]] && TARG_LOC="$altPath/LaunchURLs";
+    # If needed, update to the specified directory
+	[[ -n "${ALTERNATIVE_PATH}" ]] && TARGET_PATH="${ALTERNATIVE_PATH}/LaunchURLs";
 
-	# Move the file to the target location
-	sudo cp $CURR_LOC $TARG_LOC
+	# Copy the script to the target location
+    if ! sudo cp "${CURRENT_PATH}" "${TARGET_PATH}";
+    then
+        echo "Unable to copy LaunchURLs to ${TARGET_PATH}" >&2;
+        exit 1;
+    fi
 
-	# Create the directory for the .desktop file
-    DeskfilesPath=~/.local/share/applications/URLs_DeskFiles
-    [[ ! -d $DeskfilesPath ]] && mkdir $DeskfilesPath;
-
-    # Create directory for temporary files
-    TemporalPath=/tmp/LaunchURLs/
-    [[ ! -d $TemporalPath ]] && mkdir $TemporalPath;
-
+	# Create the directory for the .desktop and for temporary files
+    # TODO(NoeCampos22): Find how to get the username to build the absolute path
+    DESKFILES_PATH='/home/noecampos/.local/share/applications/URLs_DeskFiles'
+    TEMPORAL_PATH='/tmp/LaunchURLs/'
+    [[ ! -d "${DESKFILES_PATH}" ]] && mkdir "${DESKFILES_PATH}";
+    [[ ! -d "${TEMPORAL_PATH}" ]] && mkdir "${TEMPORAL_PATH}";
 
 	echo -e "\nLaunchURLs was succesfully installed!\n"
 }
 
-# Execute the solicited option
-case $1 in
-    -y|-Y)
-        depFlg=1;
-        shift 1;;
 
-    -h|--help)
-        echo "Usage (Print the Manual)"
-        exit 1;;
-esac
+#######################################
+# MAIN FUNCTION
+#
+# Globals:
+#   DEPENDENCIES_FLAG 
+#   ALTERNATIVE_PATH
+#
+# Arguments:
+#   All
+#
+# Outputs:
+#   STDOUT:
+#       - Usage manual      
+# 
+#   STDERR:
+#       - Invalid option message
+#       - Invalid path
+#       - Unknown error while processing options
+#######################################
+main() {
 
 
-# Execute the solicited option
-while true; do
-    case $1 in
+    # Execute getopt on the arguments passed to this program
+    if ! PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l path:,help -- "$@")";
+    # Check for a bad argument
+    # TODO(NoeCampos22): Send error message to STDERR
+    then 
+        echo -e "\nInvalid options provided\n";
+        exit 1;
+    fi
 
-        --path)
-            # Check that the received path is to a valid directory
-            if [[ ! -d $2 ]]; then
-                echo -e "\nThe path must be to a valid directory.\n"
-                exit 1;
-            fi
+    eval set -- "${PARSED_OPTIONS}"
+    unset PARSED_OPTIONS
 
-            altPath=$2;
-            shift 2;;
-        
-        --)
-            shift;
-            break;;
-        
-        *) 
-            echo "Unknown error while processing options";
-            exit 1;;
-
+    # Check for possible first options
+    case "$1" in
+        -y|-Y) DEPENDENCIES_FLAG=1; shift;;
+        -h|--help) echo "Usage (Print the Manual)"; exit 1;;
     esac
-done
+
+    # Check for the others options
+    while true; do
+        case "$1" in
+
+            --path)
+                # TODO(NoeCampos22): Send error message to STDERR
+                # Check that the received path is to a valid directory
+                if [[ ! -d "$2" ]]; then
+                    echo -e "\nThe path must be to a valid directory.\n"
+                    exit 1;
+                fi
+
+                ALTERNATIVE_PATH="$2";
+                shift 2;;
+            
+            --)
+                shift;
+                break;;
+            
+            # TODO(NoeCampos22): Send error message to STDERR
+            *) 
+                echo "Unknown error while processing options";
+                exit 1;;
+
+        esac
+    done
+
+    readonly DEPENDENCIES_FLAG
+    readonly ALTERNATIVE_PATH
 
 
-# Check if wmctrl is already installed or not
-if ! command -v wmctrl >/dev/null 2>&1 ; then
-    installDependencies
-fi
+    # Check if wmctrl is already installed or not
+    if ! command -v wmctrl >/dev/null 2>&1; then
+        install_dependencies
+    fi
 
-# Call the function to move the script
-installScript
+    # Call the function to install the script
+    install_script
+    exit 1;
+}
 
-exit 1;
+main "$@"
