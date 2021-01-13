@@ -33,10 +33,13 @@ function open_url () {
 	
 	# Store the number of previous instances of Notion
 	grep_result=$(wmctrl -l | grep "$3")
+	echo "${grep_result}"
 	number_prev=$(echo "${grep_result}" | awk '{print NF/4}')
+	echo "${number_prev}"
 
 	# Calculate the position of the new WID
 	wid_number=$((4 * number_prev + 1))
+	echo "${wid_number}"
 
 	# Open the ULR on Brave as an APP
 	# TODO(NoeCampos22): Use the default browser (?)
@@ -44,18 +47,21 @@ function open_url () {
 	sleep 5s
 
 	# And check if the page already load or not
-	grep_result=$(wmctrl -l | grep "$3") 
+	grep_result=$(wmctrl -l | grep "$3")
+	echo "${grep_result}"
 
 	# If not, each 2 seconds check it
 	while [[ -z "${grep_result}" ]];
 	do 
-		grep_result=$(wmctrl -l | grep "$3") 
+		grep_result=$(wmctrl -l | grep "$3")
+		echo "${grep_result}"
 		sleep 2s; 
 	done
 
     # Store the new WID
 	wid=$(echo "${grep_result}" | awk -v var="${wid_number}" '{print $(var)}')
 	echo "${wid}" > "$1";
+	echo "${wid}"
 	
 	# Leave on the background the close function
 	nohup LaunchURLs --closeWindow "${wid}" "$1" $
@@ -87,6 +93,103 @@ function close_window() {
 	
 	# Delete the WID
 	awk "!/$1/" "$2" > temp && mv temp "$2"
+}
+
+#######################################
+# Make a .desktop file that openes the received URL
+#
+# Globals:
+#   DEPENDENCIES_FLAG
+#
+# Outputs:
+#   STDOUT:
+#       - Successful creation message
+#   STDERR:
+#       - Missing a parameter message and the manual
+#######################################
+function make_deskfile(){
+	
+	local file_template;
+	local command_temp;
+
+	# .desktop file template
+	file_template="[Desktop Entry]\nVersion=1.0\nName={APP_NAME} \nComment=To open {APP_NAME}\n{COMMAND}";
+	file_template="$file_template\nIcon=/usr/share/icons/{APP_NAME}\nEncoding=UTF-8\nTerminal=false"
+	file_template="$file_template\nType=Application\nName[it]={APP_NAME}\nCategories=URL"
+
+	# Make sure the application name, url were received
+	if [[ -z "$3" || -z "$4" ]]; then
+		echo "All the parameters are required";
+		exit 1;
+	fi
+
+	# TODO(NoeCampos22): Validate the URLS are valid
+	# Check if the launcher will open the URL as a tab 
+	# or as a an app
+	case "$1" in
+		--asApp)
+			shift 1;
+
+			# Make sure web page name received
+			if [[ -z "$4" ]]; then
+				echo "All the parameters are required";
+				exit 1;
+			fi
+			command_temp="Exec=bash -c \"LaunchURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\"";;
+
+		--asTab)
+			shift 1;
+			command_temp="Exec=bash -c \"LaunchURLs --asTab '{URL}'\"";;
+
+		--)
+			echo "Manual";
+			exit 1;;
+	esac
+
+	# Replace the file_template placeholders to the real values
+	file_template="${file_template//\{COMMAND\}/$command_temp}";
+	file_template="${file_template//\{APP_NAME\}/${2// /_}}"
+	file_template="${file_template//\{URL\}/$3}"
+	file_template="${file_template//\{WEB_PAGE\}/$4}"
+
+	# Write the desktop file
+	echo -e "${file_template}" > "${DESKFILES_PATH}"/"${2// /_}".desktop;
+}
+
+
+#######################################
+# Function that uninstall the script. 
+# Delete the file on /usr/bin/, the temporary directory
+# and the .desktop file
+#
+# Globals:
+#   DEPENDENCIES_FLAG
+#	TEMPORAL_PATH
+#
+# Outputs:
+#   STDOUT:
+#       - Uninstallation succesful message
+#   STDERR:
+#       - Message if the script received more than the uninstall option
+#######################################
+function uninstall(){
+	
+	local which_launch;
+
+	if [ "$#" -gt 1 ]; then
+		echo -e "\nAny option after --uninstall will be ignored."
+	fi
+
+	# Remove the created .desktop and temporary files
+	echo -e "\nThe .desktop files created by LaunchURLs will also be removed."
+	[[ -d "${DESKFILES_PATH}" ]] && rm -rf "${DESKFILES_PATH}";
+	[[ -d "${TEMPORAL_PATH}" ]] && rm -rf "${TEMPORAL_PATH}";
+
+	# Get the path to the command and delete the file
+	which_launch=$(which LaunchURLs);
+	sudo rm -rf "${which_launch}";
+	
+	echo -e "LaunchURLs was uninstalled succesfully!\n";
 }
 
 
@@ -161,112 +264,22 @@ main(){
 				fi
 				exit 1;;
 
-			--asTab)
-				shift 1;
-				
-				# Open the url as another tab
-				nohup brave-browser "$2" &
-				exit 1;;
+			--asTab) nohup brave-browser "$3" & exit 1;;
 			
-			--closeWindow)
-				shift 1;
+			--closeWindow) close_window "$3" "$4"; exit 1;;
 
-				# Option to leave a background function waiting 
-				# until the window is closed to update the file
-				close_window "$2" "$3"
-				exit 1;;
+			--deskfile) shift 1; make_deskfile "$@"; exit 1;;
 
-			# TODO(NoeCampos22): Make a function of creating_deskfiles
-			--deskfile)
-				shift 1;
-
-				local file_template;
-				file_template="[Desktop Entry]\nVersion=1.0\nName={APP_NAME} \nComment=To open {APP_NAME}";
-
-				# TODO(NoeCampos22): Validate the URLS are valid
-
-				# Check if the launcher will open the URL as a tab 
-				# or as a an app
-				case "$1" in
-					--asApp)
-
-						# Make sure all the needed optiones were received
-						# Application Name, URL, Web Page Name
-						if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
-							echo "All the parameters are required";
-							exit 1;
-						fi
-
-
-						file_template="$file_template\nExec=bash -c \"LaunchURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\""
-						appname="${3// /_}"
-						url="$4";
-						webpage="$5"
-						shift 1;;
-
-					--asTab)
-
-						# Make sure all the needed optiones were received
-						# Application Name, URL, Web Page Name
-						if [[ -z "$3" || -z "$4" ]]; then
-							echo "All the parameters are required";
-							exit 1;
-						fi
-
-						file_template="$file_template\nExec=bash -c \"LaunchURLs --asTab '{URL}'\""
-						appname="${3// /_}"
-						url="$4";
-						shift 1;;
-
-					--)
-						echo "Manual";
-						exit 1;;
-				esac
-
-				file_template="$file_template\nIcon=/usr/share/icons/{APP_NAME}\nEncoding=UTF-8\nTerminal=false"
-				file_template="$file_template\nType=Application\nName[it]={APP_NAME}\nCategories=URL"
-
-				# Replace the file_template placeholders to the real URL
-				file_template="${file_template//\{APP_NAME\}/$appname}"
-				file_template="${file_template//\{URL\}/$url}"
-				file_template="${file_template//\{WEB_PAGE\}/$webpage}"
-
-				echo -e "${file_template}" > "${DESKFILES_PATH}"/"${appname}".desktop;;
-
-
-			# TODO(NoeCampos22): Make a function of uninstalling
-			--uninstall)
-				shift 1;
-
-				local which_launch;
-
-				if [ "$#" -gt 1 ]; then
-					echo -e "\nAny option after --uninstall will be ignored."
-				fi
-
-				# Remove the created .desktop files
-				echo -e "\nThe .desktop files created by LaunchURLs will also be removed."
-				[[ -d "${DESKFILES_PATH}" ]] && rm -rf "${DESKFILES_PATH}";
-				[[ -d "${TEMPORAL_PATH}" ]] && rm -rf "${TEMPORAL_PATH}";
-
-				# Get the path to the command and delete the file
-				which_launch=$(which LaunchURLs);
-				
-				sudo rm -rf "${which_launch}";
-				
-				echo -e "LaunchURLs was uninstalled succesfully!\n"
-				exit 1;;
+			--uninstall) uninstall; exit 1;;
 
 			-h|--help)
 				echo "Usage (Print the Manual)"
 				exit 1;;
 			
-			--) shift; break;;
+			--)	shift; break;;
 			
 			# TODO(NoeCampos22): Send error message to STDERR
-			*) 
-				echo "Unknown error while processing options";
-				exit 1;;
+			*) echo "Unknown error while processing options"; exit 1;;
 
 		esac
 	done
@@ -275,3 +288,4 @@ main(){
 
 
 main "$@"
+echo "Usage (Print the Manual)"
