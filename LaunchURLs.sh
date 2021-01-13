@@ -3,13 +3,22 @@
 # Script to open URLs as apps and manage the windows,
 # also easily create new .desktop files that opens URLs.
 
-# TODO(NoeCampos22): Change the error messages to the STDERR and non errors to STDOUT
-
 # TODO(NoeCampos22): Find how to get the username to build the absolute path
 # TODO(NoeCampos22): Make them local variables on the main, since the other functions receive them as arguments
 readonly DESKFILES_PATH='/home/noecampos/.local/share/applications/URLs_DeskFiles'
 readonly TEMPORAL_PATH='/tmp/LaunchURLs'
 
+
+#######################################
+# Function to print an error message
+#
+# Arguments:
+#   The messages
+#
+#######################################
+err() {
+  echo -e "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $* \n" >&2
+}
 
 #######################################
 # Function that opens an URL as an app
@@ -101,6 +110,9 @@ function close_window() {
 # Globals:
 #   DEPENDENCIES_FLAG
 #
+# Arguments:
+#	All
+#
 # Outputs:
 #   STDOUT:
 #       - Successful creation message
@@ -119,7 +131,7 @@ function make_deskfile(){
 
 	# Make sure the application name, url were received
 	if [[ -z "$3" || -z "$4" ]]; then
-		echo "All the parameters are required";
+		err "All the parameters are required";
 		exit 1;
 	fi
 
@@ -132,7 +144,7 @@ function make_deskfile(){
 
 			# Make sure web page name received
 			if [[ -z "$4" ]]; then
-				echo "All the parameters are required";
+				err "All the parameters are required";
 				exit 1;
 			fi
 			command_temp="Exec=bash -c \"LaunchURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\"";;
@@ -176,10 +188,6 @@ function uninstall(){
 	
 	local which_launch;
 
-	if [ "$#" -gt 1 ]; then
-		echo -e "\nAny option after --uninstall will be ignored."
-	fi
-
 	# Remove the created .desktop and temporary files
 	echo -e "\nThe .desktop files created by LaunchURLs will also be removed."
 	[[ -d "${DESKFILES_PATH}" ]] && rm -rf "${DESKFILES_PATH}";
@@ -193,14 +201,32 @@ function uninstall(){
 }
 
 
+#######################################
+# MAIN FUNCTION
+#
+# Globals:
+#   DESKFILES_PATH
+#   TEMPORAL_PATH
+#
+# Arguments:
+#   All
+#
+# Outputs:
+#   STDOUT:
+#       - Usage manual
+# 
+#   STDERR:
+#       - Invalid option message
+#       - Invalid path
+#       - Unknown error while processing options
+#######################################
 main(){
 
 	# Execute getopt on the arguments passed to this program
     if ! PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l asApp,asTab,closeWindow,deskfile,uninstall,help -- "$@")";
     # Check for a bad argument
-    # TODO(NoeCampos22): Send error message to STDERR
 	then 
-        echo -e "\nInvalid options provided\n";
+        err "Invalid options provided";
         exit 1;
     fi
 
@@ -222,7 +248,7 @@ main(){
 				# Make sure all the needed optiones were received
 				# Application Name, URL, Web Page Name
 				if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
-					echo "All the parameters are required";
+					err "All the parameters are required";
 					exit 1;
 				fi
 
@@ -231,40 +257,42 @@ main(){
 				# Build the path to the temporal file
 				file_path="${TEMPORAL_PATH}/${2// /_}_WID"
 				readonly file_path
-				
-				# TODO(NoeCampos22): Merge both conditions
-				# Check if the file exists
-				if test -f "${file_path}"; then
 
-					# If it is not empty...
-					if [ -s "${file_path}" ]; then
+				# If it is not empty...
+				if [ -s "${file_path}" ]; then
 
-						# Look on the file if there is a WID
-						wid=$(cat "${file_path}")
-						grep_result=$(wmctrl -l | grep "${wid}")
+					# Look on the file if there is a WID
+					wid=$(cat "${file_path}")
+					grep_result=$(wmctrl -l | grep "${wid}")
 
-						# If it is a non active window or an empty file..
-						if [ -z "${grep_result}" ]; then
+					# If it is a non active window or an empty file..
+					if [ -z "${grep_result}" ]; then
 
-							# Open the URL
-							open_url "${file_path}" "$3" "$4"
-
-						else			
-							# Or bring upfront the active window
-							wmctrl -iR "${wid}"
-						fi
-					
-					else
-						# Open the URL 
+						# Open the URL
 						open_url "${file_path}" "$3" "$4"
+
+					else			
+						# Or bring upfront the active window
+						wmctrl -iR "${wid}"
 					fi
+				
 				else
-					# Open the URL
+					# Open the URL 
 					open_url "${file_path}" "$3" "$4"
 				fi
+
 				exit 1;;
 
-			--asTab) nohup brave-browser "$3" & exit 1;;
+			--asTab) 
+
+				# Make sure the URL was received
+				if [[ -z "$3" ]]; then
+					err "The URL parameter is required";
+					exit 1;
+				fi
+			
+				nohup brave-browser "$3" & 
+				exit 1;;
 			
 			--closeWindow) close_window "$3" "$4"; exit 1;;
 
@@ -278,8 +306,7 @@ main(){
 			
 			--)	shift; break;;
 			
-			# TODO(NoeCampos22): Send error message to STDERR
-			*) echo "Unknown error while processing options"; exit 1;;
+			*) err "Unknown error while processing options"; exit 1;;
 
 		esac
 	done

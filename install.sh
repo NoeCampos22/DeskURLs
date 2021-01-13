@@ -2,13 +2,23 @@
 #
 # Install the LaunchURL script and make the needed directories
 
-# TODO(NoeCampos22): Change the error messages to the STDERR and non errors to STDOUT
-
 # TODO(NoeCampos22): Change Global variables to Local on the main function
 # and send them as arguments to the rest of functions
 # Global Variables
 DEPENDENCIES_FLAG=
 ALTERNATIVE_PATH=
+
+
+#######################################
+# Function to print an error message
+#
+# Arguments:
+#   All the messages
+#
+#######################################
+err() {
+  echo -e "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $* \n" >&2
+}
 
 
 #######################################
@@ -78,7 +88,7 @@ function install_script() {
 	# Copy the script to the target location
     if ! sudo cp "${CURRENT_PATH}" "${TARGET_PATH}";
     then
-        echo "Unable to copy LaunchURLs to ${TARGET_PATH}" >&2;
+        err "Unable to copy LaunchURLs to ${TARGET_PATH}";
         exit 1;
     fi
 
@@ -118,9 +128,8 @@ main() {
     # Execute getopt on the arguments passed to this program
     if ! PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l path:,help -- "$@")";
     # Check for a bad argument
-    # TODO(NoeCampos22): Send error message to STDERR
     then 
-        echo -e "\nInvalid options provided\n";
+        err "Invalid options provided";
         exit 1;
     fi
 
@@ -138,24 +147,18 @@ main() {
         case "$1" in
 
             --path)
-                # TODO(NoeCampos22): Send error message to STDERR
                 # Check that the received path is to a valid directory
                 if [[ ! -d "$2" ]]; then
-                    echo -e "\nThe path must be to a valid directory.\n"
+                    err "The path must be to a valid directory."
                     exit 1;
                 fi
 
                 ALTERNATIVE_PATH="$2";
                 shift 2;;
             
-            --)
-                shift;
-                break;;
+            --) shift; break;;
             
-            # TODO(NoeCampos22): Send error message to STDERR
-            *) 
-                echo "Unknown error while processing options";
-                exit 1;;
+            *) err "Unknown error while processing options";   exit 1;;
 
         esac
     done
