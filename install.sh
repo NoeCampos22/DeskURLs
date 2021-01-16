@@ -2,11 +2,30 @@
 #
 # Install the LaunchURL script and make the needed directories
 
-# TODO(NoeCampos22): Change Global variables to Local on the main function
-# and send them as arguments to the rest of functions
-# Global Variables
-DEPENDENCIES_FLAG=
-ALTERNATIVE_PATH=
+
+#######################################
+# Function to display the help message, 
+# when the option is received or when an 
+# error occurs.
+#######################################
+function display_help () {
+# Using a here doc with standard out.
+cat <<-END
+Usage: install.sh [OPTIONS]
+  A small program to facilate the installation of the LaunchURL.sh script and
+  make the directory to store the .desktop files. To work properly, this script 
+  must be executed on the same directory where is the LaunchURLs.sh file.
+
+  Syntax: install.sh [[[-y|-Y] | [-n|-N]] [--path DIRECTORY] | [-h|--help]]
+
+  Options:
+      -y,  -Y             Install dependencies without asking.
+      -n,  -N             Not install dependencies.
+              --path      Specify the installation path.
+      -h,     --help      Display this help message.
+
+END
+}
 
 
 #######################################
@@ -22,14 +41,14 @@ err() {
 
 
 #######################################
-# Check if the needed dependecy is already installed
-# or installs it after the user confirmation.
+# Check if the dependency is already installed or 
+# asks the user for permission to install it.
 #
-# Globals:
-#   DEPENDENCIES_FLAG
+# Arguments:
+#   $1: Flag to install dependency without asking.
 #
 # Inputs:
-#   [YyNn] to give or not permission to install dependencies
+#   [YyNn] To give or not permission to install a dependency
 #
 # Outputs:
 #   STDOUT:
@@ -41,7 +60,7 @@ function install_dependencies() {
     echo -e '\nThis program has a dependcy on the package: wmctrl'
 
     # If the -Yy option was not received...
-    if [ -z "${DEPENDENCIES_FLAG}" ]; then
+    if [ -z "${1}" ]; then
 
         # Asks for permission to install packages
         while true; do
@@ -55,49 +74,51 @@ function install_dependencies() {
         done
     fi
 
+    # Install dependency
     sudo apt-get install wmctrl -y; 
     echo "";
 }
 
 
 #######################################
-# Moves the LaunchURLs script to /usr/bin/ dir or 
-# to the given path by the user. Also, creates needed directories.
+# Moves the LaunchURLs script to the /usr/bin/ dir or 
+# to the directory indicated by the user. Also, creates needed directories.
 #
-# Globals:
-#   ALTERNATIVE_PATH
+# Arguments:
+#   - $1 is an alternative path to install the script or empty
 #
 # Outputs:
 #   STDOUT:
-#       Success message
+#       - Success message
+#   STDERR:
+#       - Error trying to copy the script
 #######################################
 function install_script() {
 
-	local CURRENT_PATH;
-    local TARGET_PATH;
-    local DESKFILES_PATH;
-    local TEMPORAL_PATH;
+	local current_path;
+    local target_path;
+    local deskfiles_path;
 
 	# Build the current and target location
-    CURRENT_PATH="$(pwd)/LaunchURLs.sh";
-    TARGET_PATH="/usr/bin/LaunchURLs";
+    current_path="$(pwd)/LaunchURLs.sh";
+    target_path="/usr/bin/LaunchURLs";
+
+    # TODO(NoeCampos22): Validate the path is on the $PATH variable
+    # or at least notify that the target directory must be on it.
 
     # If needed, update to the specified directory
-	[[ -n "${ALTERNATIVE_PATH}" ]] && TARGET_PATH="${ALTERNATIVE_PATH}/LaunchURLs";
+	[[ -n "${1}" ]] && target_path="${1}/LaunchURLs";
 
 	# Copy the script to the target location
-    if ! sudo cp "${CURRENT_PATH}" "${TARGET_PATH}";
+    if ! sudo cp "${current_path}" "${target_path}";
     then
-        err "Unable to copy LaunchURLs to ${TARGET_PATH}";
+        err "Unable to copy LaunchURLs to ${target_path}";
         exit 1;
     fi
 
-	# Create the directory for the .desktop and for temporary files
-    # TODO(NoeCampos22): Find how to get the username to build the absolute path
-    DESKFILES_PATH='/home/noecampos/.local/share/applications/URLs_DeskFiles'
-    TEMPORAL_PATH='/tmp/LaunchURLs/'
-    [[ ! -d "${DESKFILES_PATH}" ]] && mkdir "${DESKFILES_PATH}";
-    [[ ! -d "${TEMPORAL_PATH}" ]] && mkdir "${TEMPORAL_PATH}";
+	# Create the directory for the .desktop (using the env var HOME)
+    deskfiles_path="$HOME/.local/share/applications/URLs_DeskFiles"
+    [[ ! -d "${deskfiles_path}" ]] && mkdir "${deskfiles_path}";
 
 	echo -e "\nLaunchURLs was succesfully installed!\n"
 }
@@ -105,10 +126,6 @@ function install_script() {
 
 #######################################
 # MAIN FUNCTION
-#
-# Globals:
-#   DEPENDENCIES_FLAG 
-#   ALTERNATIVE_PATH
 #
 # Arguments:
 #   All
@@ -124,12 +141,15 @@ function install_script() {
 #######################################
 main() {
 
+    local dependencies_flag;
+    local alternative_path;
 
     # Execute getopt on the arguments passed to this program
     if ! PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l path:,help -- "$@")";
     # Check for a bad argument
     then 
         err "Invalid options provided";
+        display_help
         exit 1;
     fi
 
@@ -138,8 +158,8 @@ main() {
 
     # Check for possible first options
     case "$1" in
-        -y|-Y) DEPENDENCIES_FLAG=1; shift;;
-        -h|--help) echo "Usage (Print the Manual)"; exit 1;;
+        -y|-Y) dependencies_flag=1; shift;;
+        -h|--help) display_help; exit 1;;
     esac
 
     # Check for the others options
@@ -153,28 +173,25 @@ main() {
                     exit 1;
                 fi
 
-                ALTERNATIVE_PATH="$2";
+                alternative_path="$2";
                 shift 2;;
             
             --) shift; break;;
             
-            *) err "Unknown error while processing options";   exit 1;;
+            *) err "Unknown error while processing options"; display_help; exit 1;;
 
         esac
     done
 
-    readonly DEPENDENCIES_FLAG
-    readonly ALTERNATIVE_PATH
-
-
     # Check if wmctrl is already installed or not
     if ! command -v wmctrl >/dev/null 2>&1; then
-        install_dependencies
+        install_dependencies "${dependencies_flag}"
     fi
 
     # Call the function to install the script
-    install_script
+    install_script "${alternative_path}"
     exit 1;
 }
 
-main "$@"
+main "$@";
+exit 1;

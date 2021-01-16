@@ -3,10 +3,85 @@
 # Script to open URLs as apps and manage the windows,
 # also easily create new .desktop files that opens URLs.
 
-# TODO(NoeCampos22): Find how to get the username to build the absolute path
-# TODO(NoeCampos22): Make them local variables on the main, since the other functions receive them as arguments
-readonly DESKFILES_PATH='/home/noecampos/.local/share/applications/URLs_DeskFiles'
-readonly TEMPORAL_PATH='/tmp/LaunchURLs'
+
+readonly DESKFILES_PATH="$HOME/.local/share/applications/URLs_DeskFiles"
+readonly TEMPORAL_PATH="/tmp/LaunchURLs"
+
+
+#######################################
+# Function to display the help message, 
+# when the option is received or when an 
+# error occurs.
+#######################################
+function display_help () {
+# Using a here doc with standard out.
+cat <<-END
+Usage: LaunchURLs OPTIONS
+  Script to create desktop files that open URLs in Brave (currently, 
+  it only works with Brave Browser) as another tab or as an application. 
+
+  Syntax: LaunchURLs [ --asApp ARGS | --asTab URL | 
+                       --deskfile [--asApp ARGS | --asTab ARGS] | 
+                       [-h|--help] | --uninstall ]
+
+  Options:
+      --asApp       Opens an URL as an application, it will keep track 
+                    of the window, to avoid opening multiple instances 
+                    of it and simply bringing to the front the initial 
+                    window when the file is run multiple times. 
+
+                    It requires three arguments: Application Name, URL 
+                    and Window Name.
+
+                    Option example: 
+                        LaunchURLs --asApp "Github" "https://github.com" "Github - Brave"
+
+                    To read a description of this arguments, read 
+                    the --deskfile option help section.
+        
+      --asTab       Just opens the passed URL in a new Brave Browser.
+                    
+                    Option example: 
+                        LaunchURLs --asTab "https://github.com"
+
+                    To read a description of this arguments, read 
+                    the --deskfile option help section.
+
+      --deskfile    Make a .desktop file that open a URL. After this 
+                    option it is need to specify if it will be as an 
+                    app or as a tab and some arguments.
+                      
+                    Required option and arguments:
+                      --asApp "Application Name" "URL" "Window Name"
+                      --asTab "Application Name" "URL"
+
+                    * Application Name is how you want the desktop file 
+                    to be named. Ex: If it is to open the Github portal, 
+                    the application name could be just "Github".
+
+                    * Window Name is how the window is named after loading 
+                    the URL. To get this, you can run the command "wmctrl -l", 
+                    open the desired URL on a Brave tab, go again to 
+                    the terminal and run again "wmctrl -l" and take note
+                    of the new window name.
+
+                    Option examples:
+                      LaunchURLs --deskfile --asApp "Github" "https://github.com" "Github - Brave"
+                      LaunchURLs --deskfile --asTab "Github" "https://github.com"
+
+                    NOTE: For the APP.deskfile to have an empty or 
+                    default icon, you need to download a desired
+                    SVG or PNG file with the exact same name as the 
+                    Application Name and store it on the 
+                    /usr/share/icons/ dir.
+
+      --uninstall   Remove the LaunchURL command and delete the 
+                    directory where the .desktop files are.
+
+  -h, --help        Display this help message.
+
+END
+}
 
 
 #######################################
@@ -37,40 +112,39 @@ function open_url () {
 	local wid_number;
 	local wid;
 
-	# TODO(NoeCampos22): If the 2 instances option is deprecated,
-	# this logic should be removed
+	# TODO(NoeCampos22): This logic is kept due to the future possibility 
+	# of launching URLs as apps but with the option of having mulitple instances
 	
-	# Store the number of previous instances of Notion
+	# Store the number of previous instances of the page
 	grep_result=$(wmctrl -l | grep "$3")
-	echo "${grep_result}"
-	number_prev=$(echo "${grep_result}" | awk '{print NF/4}')
-	echo "${number_prev}"
+	#number_prev=$(echo "${grep_result}" | awk '{print NF/4}')
+	number_prev=$(echo "${grep_result}" | awk '{print NF}')
 
 	# Calculate the position of the new WID
-	wid_number=$((4 * number_prev + 1))
-	echo "${wid_number}"
+	# wid_number=$((4 * number_prev + 1))
+	wid_number=$((number_prev + 1))
 
 	# Open the ULR on Brave as an APP
+	# TODO(NoeCampos22): Valid the received url is valid (?)
 	# TODO(NoeCampos22): Use the default browser (?)
     brave-browser --app="$2" &
 	sleep 5s
 
 	# And check if the page already load or not
 	grep_result=$(wmctrl -l | grep "$3")
-	echo "${grep_result}"
 
 	# If not, each 2 seconds check it
 	while [[ -z "${grep_result}" ]];
 	do 
 		grep_result=$(wmctrl -l | grep "$3")
-		echo "${grep_result}"
 		sleep 2s; 
 	done
 
     # Store the new WID
 	wid=$(echo "${grep_result}" | awk -v var="${wid_number}" '{print $(var)}')
+
+	# TODO(NoeCampos22): Change from many files, to just one that store all the WIDs.
 	echo "${wid}" > "$1";
-	echo "${wid}"
 	
 	# Leave on the background the close function
 	nohup LaunchURLs --closeWindow "${wid}" "$1" $
@@ -123,30 +197,22 @@ function make_deskfile(){
 	
 	local file_template;
 	local command_temp;
+	local as_app;
+
+	# TODO(NoeCampos22): Add the option of adding an extra option to pass a URL to the desired icon
+	# and download/move itself.
 
 	# .desktop file template
 	file_template="[Desktop Entry]\nVersion=1.0\nName={APP_NAME} \nComment=To open {APP_NAME}\n{COMMAND}";
-	file_template="$file_template\nIcon=/usr/share/icons/{APP_NAME}\nEncoding=UTF-8\nTerminal=false"
-	file_template="$file_template\nType=Application\nName[it]={APP_NAME}\nCategories=URL"
-
-	# Make sure the application name, url were received
-	if [[ -z "$3" || -z "$4" ]]; then
-		err "All the parameters are required";
-		exit 1;
-	fi
+	file_template="$file_template\nIcon=/usr/share/icons/{APP_NAME}\nEncoding=UTF-8\nTerminal=false";
+	file_template="$file_template\nType=Application\nName[it]={APP_NAME}\nCategories=URL";
 
 	# TODO(NoeCampos22): Validate the URLS are valid
-	# Check if the launcher will open the URL as a tab 
-	# or as a an app
+	# Check if the launcher will open the URL as a tab or as a an app
 	case "$1" in
 		--asApp)
 			shift 1;
-
-			# Make sure web page name received
-			if [[ -z "$4" ]]; then
-				err "All the parameters are required";
-				exit 1;
-			fi
+			as_app=1;
 			command_temp="Exec=bash -c \"LaunchURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\"";;
 
 		--asTab)
@@ -154,9 +220,26 @@ function make_deskfile(){
 			command_temp="Exec=bash -c \"LaunchURLs --asTab '{URL}'\"";;
 
 		--)
-			echo "Manual";
+			err "It is necessary to specify if it will open as an App or as a Tab";
+			display_help;
 			exit 1;;
 	esac
+
+	# Make sure the application name, url were received
+	if [[ -z "$2" || -z "$3" ]]; then
+		err "All the parameters are required";
+		display_help;
+		exit 1;
+	fi
+
+	# TODO(NoeCampos22): Make that the script get this value by itself 
+	# (opening the url and checking the wmctrl list)
+	# Make sure web page name received
+	if [[ -n "${as_app}" && -z "$4" ]]; then
+		err "All the parameters are required2";
+		display_help;
+		exit 1;
+	fi
 
 	# Replace the file_template placeholders to the real values
 	file_template="${file_template//\{COMMAND\}/$command_temp}";
@@ -227,6 +310,7 @@ main(){
     # Check for a bad argument
 	then 
         err "Invalid options provided";
+		display_help;
         exit 1;
     fi
 
@@ -249,10 +333,12 @@ main(){
 				# Application Name, URL, Web Page Name
 				if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
 					err "All the parameters are required";
+					display_help;
 					exit 1;
 				fi
 
-				# TODO(NoeCampos22): Validate the received URL is valid
+				# Check if the temporary directory exists
+    			[[ ! -d "${TEMPORAL_PATH}" ]] && mkdir "${TEMPORAL_PATH}";
 
 				# Build the path to the temporal file
 				file_path="${TEMPORAL_PATH}/${2// /_}_WID"
@@ -288,6 +374,7 @@ main(){
 				# Make sure the URL was received
 				if [[ -z "$3" ]]; then
 					err "The URL parameter is required";
+					display_help;
 					exit 1;
 				fi
 			
@@ -301,12 +388,12 @@ main(){
 			--uninstall) uninstall; exit 1;;
 
 			-h|--help)
-				echo "Usage (Print the Manual)"
+				display_help;
 				exit 1;;
 			
 			--)	shift; break;;
 			
-			*) err "Unknown error while processing options"; exit 1;;
+			*) err "Unknown error while processing options"; display_help; exit 1;;
 
 		esac
 	done
@@ -315,4 +402,5 @@ main(){
 
 
 main "$@"
-echo "Usage (Print the Manual)"
+display_help;
+exit 1;
