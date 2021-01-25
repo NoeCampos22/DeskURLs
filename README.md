@@ -159,17 +159,17 @@ Distributed under the MIT License. See [LICENSE](LICENSE.md) for more informatio
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/NoeCampos22/repo.svg?style=for-the-badge
-[contributors-url]: https://github.com/NoeCampos22/repo/graphs/contributors
+[contributors-shield]: https://img.shields.io/github/contributors/NoeCampos22/Launch-URL.svg?style=for-the-badge
+[contributors-url]: https://github.com/NoeCampos22/Launch-URL/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/NoeCampos22/repo.svg?style=for-the-badge
-[forks-url]: https://github.com/NoeCampos22/repo/network/members
+[forks-shield]: https://img.shields.io/github/forks/NoeCampos22/Launch-URL.svg?style=for-the-badge
+[forks-url]: https://github.com/NoeCampos22/Launch-URL/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/NoeCampos22/repo.svg?style=for-the-badge
-[stars-url]: https://github.com/NoeCampos22/repo/stargazers
+[stars-shield]: https://img.shields.io/github/stars/NoeCampos22/Launch-URL.svg?style=for-the-badge
+[stars-url]: https://github.com/NoeCampos22/Launch-URL/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/NoeCampos22/repo.svg?style=for-the-badge
-[issues-url]: https://github.com/NoeCampos22/repo/issues
+[issues-shield]: https://img.shields.io/github/issues/NoeCampos22/Launch-URL.svg?style=for-the-badge
+[issues-url]: https://github.com/NoeCampos22/Launch-URL/issues
 
-[license-shield]: https://img.shields.io/github/license/NoeCampos22/repo.svg?style=for-the-badge
-[license-url]: https://github.com/NoeCampos22/repo/blob/master/LICENSE.txt
+[license-shield]: https://img.shields.io/github/license/NoeCampos22/Launch-URL.svg?style=for-the-badge
+[license-url]: https://github.com/NoeCampos22/Launch-URL/blob/master/LICENSE.txt
