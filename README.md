@@ -9,20 +9,20 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/NoeCampos22/Launch-URL">
+  <a href="https://github.com/NoeCampos22/DeskURLs">
     <img src="repo_assets/logo.svg" alt="Logo" width="80" height="80">
     
   </a>
 
-  <h3 align="center">Launch-URLs</h3>
+  <h3 align="center">DeskURLs</h3>
 
   <p align="center">
     Easily create .desktop files to open URLs from your application menu, dock or dash.
     <br />
     ·
-    <a href="https://github.com/NoeCampos22/Launch-URL/issues">Report Bug</a>
+    <a href="https://github.com/NoeCampos22/DeskURLs/issues">Report Bug</a>
     ·
-    <a href="https://github.com/NoeCampos22/Launch-URL/issues">Request Feature</a>
+    <a href="https://github.com/NoeCampos22/DeskURLs/issues">Request Feature</a>
     ·
   </p>
 </p>
@@ -34,13 +34,15 @@
   <summary><h2 style="display: inline-block">Table of Contents</h2></summary>
   <ol>
     <li><a href="#project-description">Project Description</a></li>
-    <li><a href="#installation">Installation</a></li>
+    <li><a href="#install">Install</a></li>
     <li><a href="#usage">Usage</a>
     <ul>
         <li><a href="#open-as-a-tab">Open as a Tab</a></li>
         <li><a href="#open-as-an-app">Open as an App</a></li>
+        <li><a href="#important-notes">Important Notes</a></li>
       </ul>
     </li>
+    <li><a href="#uninstall">Uninstall</a></li>
     <li><a href="#future-features-and-issues">Future Features and Issues</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -54,27 +56,27 @@
 
 Sometimes we visit a web page so many times that even open it from the web browser's bookmark is not fast enough. Or it may be the case of wanting to open a webpage separate from all the other tabs, as if it were its own application.
 
-Launch-URLs takes advantage that in Linux you can create .desktop files to execute a command. Makes easier the procces of creating one that opens URLs on the browser **(NOTE: At the moment, it is compatible/tested just with Brave Browser)**. Also, it adds the option of opening URLs as if they were an independent application, which does not create new instances each time it is executed but brings the already open tab to the front of the screen.
+DeskURLs takes advantage that in Linux you can create .desktop files to execute a command. Makes easier the procces of creating one that opens URLs on the browser **(NOTE: At the moment, it is compatible/tested just with Brave Browser)**. Also, it adds the option of opening URLs as if they were an independent application, which does not create new instances each time it is executed but brings the already open tab to the front of the screen.
 
 ![Initial Demo!](repo_assets/initial_demo.gif)
 <br />
 
 
-<!-- INSTALLATION -->
-## Installation
+<!-- INSTALL -->
+## Install
 Follow the next steps to download and install correctly the script.
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/NoeCampos22/Launch-URL.git
+   git clone https://github.com/NoeCampos22/DeskURLs.git
    ```
 2. Enter the repo directory and run the install script
    ```sh
-   cd Launch-URL
+   cd DeskURLs
    ./install -Y # The -Y option is to install automatically the dependencies
    ```
 
-**Note:** By default, the script will be installed on the /usr/bin/ directory, but, it can be specified a different directory (it must be on the $PATH variable) with the --path option.
+**Note:** By default, the script will be installed on the /usr/bin/ directory, but it can be specified a different directory (it must be on the $PATH variable) with the --path option.
 <br />
 
 
@@ -84,11 +86,11 @@ Now that it is already installed is time to create new .desktop files!
 <br />
 
 ### Open as a Tab
-With this option you will be able to create a .desktop file that opens the url on new tab each time is executed. For example, if you want to make a .deskfile that opens Youtube:
+With this option you will be able to create a .desktop file that opens the url on a new tab each time is executed. For example, if you want to make a .deskfile that opens Youtube:
 
    ```sh
-   # LaunchURLs --deskfile --asTab "Deskfile Name" "URL"
-   LaunchURLs --deskfile --asTab "Youtube" "https://www.youtube.com/"
+   # DeskURLs --deskfile --asTab "Deskfile Name" "URL"
+   DeskURLs --deskfile --asTab "Youtube" "https://www.youtube.com/"
    ```
 
 After that, you need to log out and log in, for the application menu to update.
@@ -101,8 +103,8 @@ With this option the .desktop files you create will open the url on a new window
 The next example shows how to create a file that opens Notion on a page named Example:
 
    ```sh
-   # LaunchURLs --deskfile --asApp "Deskfile Name" "URL" "Window Name"
-   LaunchURLs --deskfile --asApp "Notion" "notion.so/Example" "Example"
+   # DeskURLs --deskfile --asApp "Deskfile Name" "URL" "Window Name"
+   DeskURLs --deskfile --asApp "Notion" "notion.so/Example" "Example"
    ```
 
 To get the *Window Name*, open a terminal and follow the next steps:
@@ -121,7 +123,7 @@ After that, you need to log out and log in, for the application menu to update.
 <br />
 
 ### Important Notes
-1. In both options, For the deskfile to have an icon, it must be downloaded (as .png or .svg) and copied to the /usr/share/icons directory with the exact same name as the Deskfile Name and without extension.
+1. In both options, for the deskfile to have an icon, it must be downloaded (as .png or .svg) and copied to the /usr/share/icons directory with the exact same name as the Deskfile Name and without extension.
     ```sh
     sudo cp Deskfile_Name.png /usr/share/icons/Deskfile_Name
     ```
@@ -132,10 +134,19 @@ After that, you need to log out and log in, for the application menu to update.
 <br />
 
 
+<!-- UNINSTALL -->
+## Uninstall
+To uninstall the script you simply need to run the next command:
+```sh
+DeskURLs --uninstall
+```
+This will remove the command and also delete the directory with the .desktop files. 
+<br />
+
+
 <!-- Future Features & Issues -->
 ## Future Features and Issues
-
-See the [open issues](https://github.com/NoeCampos22/Launch-URL/issues) for a list of proposed features (and known issues).
+See the [open issues](https://github.com/NoeCampos22/DeskURLs/issues) for a list of proposed features (and known issues).
 <br />
 
 
@@ -159,17 +170,17 @@ Distributed under the MIT License. See [LICENSE](LICENSE.md) for more informatio
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/NoeCampos22/Launch-URL.svg?style=for-the-badge
-[contributors-url]: https://github.com/NoeCampos22/Launch-URL/graphs/contributors
+[contributors-shield]: https://img.shields.io/github/contributors/NoeCampos22/DeskURLs.svg?style=for-the-badge
+[contributors-url]: https://github.com/NoeCampos22/DeskURLs/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/NoeCampos22/Launch-URL.svg?style=for-the-badge
-[forks-url]: https://github.com/NoeCampos22/Launch-URL/network/members
+[forks-shield]: https://img.shields.io/github/forks/NoeCampos22/DeskURLs.svg?style=for-the-badge
+[forks-url]: https://github.com/NoeCampos22/DeskURLs/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/NoeCampos22/Launch-URL.svg?style=for-the-badge
-[stars-url]: https://github.com/NoeCampos22/Launch-URL/stargazers
+[stars-shield]: https://img.shields.io/github/stars/NoeCampos22/DeskURLs.svg?style=for-the-badge
+[stars-url]: https://github.com/NoeCampos22/DeskURLs/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/NoeCampos22/Launch-URL.svg?style=for-the-badge
-[issues-url]: https://github.com/NoeCampos22/Launch-URL/issues
+[issues-shield]: https://img.shields.io/github/issues/NoeCampos22/DeskURLs.svg?style=for-the-badge
+[issues-url]: https://github.com/NoeCampos22/DeskURLs/issues
 
-[license-shield]: https://img.shields.io/github/license/NoeCampos22/Launch-URL.svg?style=for-the-badge
-[license-url]: https://github.com/NoeCampos22/Launch-URL/blob/master/LICENSE.txt
+[license-shield]: https://img.shields.io/github/license/NoeCampos22/DeskURLs.svg?style=for-the-badge
+[license-url]: https://github.com/NoeCampos22/DeskURLs/blob/master/LICENSE.txt

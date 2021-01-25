@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Install the LaunchURL script and make the needed directories
+# Install the DeskURLs script and make the needed directories
 
 
 #######################################
@@ -12,9 +12,9 @@ function display_help () {
 # Using a here doc with standard out.
 cat <<-END
 Usage: install.sh [OPTIONS]
-  A small program to facilate the installation of the LaunchURL.sh script and
+  A small program to facilate the installation of the DeskURLs.sh script and
   make the directory to store the .desktop files. To work properly, this script 
-  must be executed on the same directory where is the LaunchURLs.sh file.
+  must be executed on the same directory where is the DeskURLs.sh file.
 
   Syntax: install.sh [[[-y|-Y] | [-n|-N]] [--path DIRECTORY] | [-h|--help]]
 
@@ -68,7 +68,7 @@ function install_dependencies() {
             
             case "${YN}" in
                 [Yy]* ) break;;
-                [Nn]* ) echo -e "\nCan not use LaunchURL without installing wmctrl\n"; exit;;
+                [Nn]* ) echo -e "\nCan not use DeskURLs without installing wmctrl\n"; exit;;
                 * ) echo -e "\nPlease answer yes (y/Y) or no (n/N).\n";;
             esac
         done
@@ -81,7 +81,7 @@ function install_dependencies() {
 
 
 #######################################
-# Moves the LaunchURLs script to the /usr/bin/ dir or 
+# Moves the DeskURLs script to the /usr/bin/ dir or 
 # to the directory indicated by the user. Also, creates needed directories.
 #
 # Arguments:
@@ -100,27 +100,27 @@ function install_script() {
     local deskfiles_path;
 
 	# Build the current and target location
-    current_path="$(pwd)/LaunchURLs.sh";
-    target_path="/usr/bin/LaunchURLs";
+    current_path="$(pwd)/DeskURLs.sh";
+    target_path="/usr/bin/DeskURLs";
 
     # TODO(NoeCampos22): Validate the path is on the $PATH variable
     # or at least notify that the target directory must be on it.
 
     # If needed, update to the specified directory
-	[[ -n "${1}" ]] && target_path="${1}/LaunchURLs";
+	[[ -n "${1}" ]] && target_path="${1}/DeskURLs";
 
 	# Copy the script to the target location
     if ! sudo cp "${current_path}" "${target_path}";
     then
-        err "Unable to copy LaunchURLs to ${target_path}";
+        err "Unable to copy DeskURLs to ${target_path}";
         exit 1;
     fi
 
 	# Create the directory for the .desktop (using the env var HOME)
-    deskfiles_path="$HOME/.local/share/applications/URLs_DeskFiles"
+    deskfiles_path="$HOME/.local/share/applications/DeskURLS"
     [[ ! -d "${deskfiles_path}" ]] && mkdir "${deskfiles_path}";
 
-	echo -e "\nLaunchURLs was succesfully installed!\n"
+	echo -e "\nDeskURLs was succesfully installed!\n"
 }
 
 
@@ -145,7 +145,7 @@ main() {
     local alternative_path;
 
     # Execute getopt on the arguments passed to this program
-    if ! PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l path:,help -- "$@")";
+    if ! PARSED_OPTIONS="$(getopt --n "DeskURLs" -o ynYNh -l path:,help -- "$@")";
     # Check for a bad argument
     then 
         err "Invalid options provided";

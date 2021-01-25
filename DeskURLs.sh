@@ -4,8 +4,8 @@
 # also easily create new .desktop files that opens URLs.
 
 
-readonly DESKFILES_PATH="$HOME/.local/share/applications/URLs_DeskFiles"
-readonly TEMPORAL_PATH="/tmp/LaunchURLs"
+readonly DESKFILES_PATH="$HOME/.local/share/applications/DeskURLS"
+readonly TEMPORAL_PATH="/tmp/DeskURLs"
 
 
 #######################################
@@ -16,11 +16,11 @@ readonly TEMPORAL_PATH="/tmp/LaunchURLs"
 function display_help () {
 # Using a here doc with standard out.
 cat <<-END
-Usage: LaunchURLs OPTIONS
+Usage: DeskURLs OPTIONS
   Script to create desktop files that open URLs in Brave (currently, 
   it only works with Brave Browser) as another tab or as an application. 
 
-  Syntax: LaunchURLs [ --asApp ARGS | --asTab URL | 
+  Syntax: DeskURLs [ --asApp ARGS | --asTab URL | 
                        --deskfile [--asApp ARGS | --asTab ARGS] | 
                        [-h|--help] | --uninstall ]
 
@@ -34,7 +34,7 @@ Usage: LaunchURLs OPTIONS
                     and Window Name.
 
                     Option example: 
-                        LaunchURLs --asApp "Github" "https://github.com" "Github - Brave"
+                        DeskURLs --asApp "Github" "https://github.com" "Github - Brave"
 
                     To read a description of this arguments, read 
                     the --deskfile option help section.
@@ -42,7 +42,7 @@ Usage: LaunchURLs OPTIONS
       --asTab       Just opens the passed URL in a new Brave Browser.
                     
                     Option example: 
-                        LaunchURLs --asTab "https://github.com"
+                        DeskURLs --asTab "https://github.com"
 
                     To read a description of this arguments, read 
                     the --deskfile option help section.
@@ -66,8 +66,8 @@ Usage: LaunchURLs OPTIONS
                     of the new window name.
 
                     Option examples:
-                      LaunchURLs --deskfile --asApp "Github" "https://github.com" "Github - Brave"
-                      LaunchURLs --deskfile --asTab "Github" "https://github.com"
+                      DeskURLs --deskfile --asApp "Github" "https://github.com" "Github - Brave"
+                      DeskURLs --deskfile --asTab "Github" "https://github.com"
 
                     NOTE: For the APP.deskfile to have an empty or 
                     default icon, you need to download a desired
@@ -75,7 +75,7 @@ Usage: LaunchURLs OPTIONS
                     Deskfile Name and store it on the 
                     /usr/share/icons/ dir.
 
-      --uninstall   Remove the LaunchURL command and delete the 
+      --uninstall   Remove the DeskURLs command and delete the 
                     directory where the .desktop files are.
 
   -h, --help        Display this help message.
@@ -100,7 +100,7 @@ err() {
 # and store the window ID to manage it.
 #
 # Arguments:
-#   $1: Path to the file /tmp/LaunchURLS/APP_WID
+#   $1: Path to the file /tmp/DeskURLs/APP_WID
 #   $2: URL to open
 #	$3: Web page that will be open
 #
@@ -113,7 +113,7 @@ function open_url () {
 	local wid;
 
 	# TODO(NoeCampos22): This logic is kept due to the future possibility 
-	# of launching URLs as apps but with the option of having mulitple instances
+	# of opening URLs as apps but with the option of having mulitple instances
 	
 	# Store the number of previous instances of the page
 	grep_result=$(wmctrl -l | grep "$3")
@@ -147,7 +147,7 @@ function open_url () {
 	echo "${wid}" > "$1";
 	
 	# Leave on the background the close function
-	nohup LaunchURLs --closeWindow "${wid}" "$1" $
+	nohup DeskURLs --closeWindow "${wid}" "$1" $
 }
 
 
@@ -213,11 +213,11 @@ function make_deskfile(){
 		--asApp)
 			shift 1;
 			as_app=1;
-			command_temp="Exec=bash -c \"LaunchURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\"";;
+			command_temp="Exec=bash -c \"DeskURLs --asApp '{APP_NAME}' '{URL}' '{WEB_PAGE}'\"";;
 
 		--asTab)
 			shift 1;
-			command_temp="Exec=bash -c \"LaunchURLs --asTab '{URL}'\"";;
+			command_temp="Exec=bash -c \"DeskURLs --asTab '{URL}'\"";;
 
 		--)
 			err "It is necessary to specify if it will open as an App or as a Tab";
@@ -269,18 +269,18 @@ function make_deskfile(){
 #######################################
 function uninstall(){
 	
-	local which_launch;
+	local which_deskurls;
 
 	# Remove the created .desktop and temporary files
-	echo -e "\nThe .desktop files created by LaunchURLs will also be removed."
+	echo -e "\nThe .desktop files created by DeskURLs will also be removed."
 	[[ -d "${DESKFILES_PATH}" ]] && rm -rf "${DESKFILES_PATH}";
 	[[ -d "${TEMPORAL_PATH}" ]] && rm -rf "${TEMPORAL_PATH}";
 
 	# Get the path to the command and delete the file
-	which_launch=$(which LaunchURLs);
-	sudo rm -rf "${which_launch}";
+	which_deskurls=$(which DeskURLs);
+	sudo rm -rf "${which_deskurls}";
 	
-	echo -e "LaunchURLs was uninstalled succesfully!\n";
+	echo -e "DeskURLs was uninstalled succesfully!\n";
 }
 
 
@@ -306,7 +306,7 @@ function uninstall(){
 main(){
 
 	# Execute getopt on the arguments passed to this program
-    if ! PARSED_OPTIONS="$(getopt --n "LaunchURLs" -o ynYNh -l asApp,asTab,closeWindow,deskfile,uninstall,help -- "$@")";
+    if ! PARSED_OPTIONS="$(getopt --n "DeskURLs" -o ynYNh -l asApp,asTab,closeWindow,deskfile,uninstall,help -- "$@")";
     # Check for a bad argument
 	then 
         err "Invalid options provided";
