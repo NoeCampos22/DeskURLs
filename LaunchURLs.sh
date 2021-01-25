@@ -30,7 +30,7 @@ Usage: LaunchURLs OPTIONS
                     of it and simply bringing to the front the initial 
                     window when the file is run multiple times. 
 
-                    It requires three arguments: Application Name, URL 
+                    It requires three arguments: Deskfile Name, URL 
                     and Window Name.
 
                     Option example: 
@@ -52,12 +52,12 @@ Usage: LaunchURLs OPTIONS
                     app or as a tab and some arguments.
                       
                     Required option and arguments:
-                      --asApp "Application Name" "URL" "Window Name"
-                      --asTab "Application Name" "URL"
+                      --asApp "Deskfile Name" "URL" "Window Name"
+                      --asTab "Deskfile Name" "URL"
 
-                    * Application Name is how you want the desktop file 
+                    * Deskfile Name is how you want the desktop file 
                     to be named. Ex: If it is to open the Github portal, 
-                    the application name could be just "Github".
+                    the Deskfile Name could be just "Github".
 
                     * Window Name is how the window is named after loading 
                     the URL. To get this, you can run the command "wmctrl -l", 
@@ -72,7 +72,7 @@ Usage: LaunchURLs OPTIONS
                     NOTE: For the APP.deskfile to have an empty or 
                     default icon, you need to download a desired
                     SVG or PNG file with the exact same name as the 
-                    Application Name and store it on the 
+                    Deskfile Name and store it on the 
                     /usr/share/icons/ dir.
 
       --uninstall   Remove the LaunchURL command and delete the 
@@ -225,7 +225,7 @@ function make_deskfile(){
 			exit 1;;
 	esac
 
-	# Make sure the application name, url were received
+	# Make sure the Deskfile Name, url were received
 	if [[ -z "$2" || -z "$3" ]]; then
 		err "All the parameters are required";
 		display_help;
@@ -330,7 +330,7 @@ main(){
 				shift 1;
 
 				# Make sure all the needed optiones were received
-				# Application Name, URL, Web Page Name
+				# Deskfile Name, URL, Web Page Name
 				if [[ -z "$2" || -z "$3" || -z "$4" ]]; then
 					err "All the parameters are required";
 					display_help;
@@ -353,6 +353,8 @@ main(){
 
 					# If it is a non active window or an empty file..
 					if [ -z "${grep_result}" ]; then
+
+						echo "here"
 
 						# Open the URL
 						open_url "${file_path}" "$3" "$4"
